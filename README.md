@@ -1,6 +1,10 @@
 # 🎬 GetShorts
 
 <p align="center">
+  <img src="assets/logo.png" width="160" alt="GetShorts Logo" />
+</p>
+
+<p align="center">
   <strong>Next-Gen Open-Source AI Video Platform & Short-Form Content Generator</strong>
 </p>
 

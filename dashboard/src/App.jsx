@@ -1258,7 +1258,7 @@ function App() {
     <div className="hidden md:flex w-20 lg:w-64 bg-paper2 border-r border-rule flex-col h-full shrink-0 transition-all duration-300">
       <a href="#landing" className="p-6 flex items-center gap-3" title="go to landing page">
         <div className="w-8 h-8 bg-paper3 rounded-input flex items-center justify-center shrink-0 overflow-hidden border border-rule">
-          <img src="/logo-openshorts.png" alt="Logo" className="w-full h-full object-cover" />
+          <img src="/logo-getshorts.png" alt="GetShorts Logo" className="w-full h-full object-cover" />
         </div>
         <span className="font-display lowercase text-lg text-ink hidden lg:block">getshorts</span>
       </a>
@@ -1314,7 +1314,7 @@ function App() {
         <div className="flex items-center justify-between px-5 h-14 border-b border-rule shrink-0">
           <a href="#landing" className="flex items-center gap-2.5" onClick={() => setNavOpen(false)}>
             <div className="w-7 h-7 bg-paper3 rounded-input overflow-hidden border border-rule shrink-0">
-              <img src="/logo-openshorts.png" alt="" className="w-full h-full object-cover" />
+              <img src="/logo-getshorts.png" alt="GetShorts Logo" className="w-full h-full object-cover" />
             </div>
             <span className="font-display lowercase text-lg text-ink">getshorts</span>
           </a>

@@ -271,7 +271,7 @@ const buildGraph = (page) => {
 
 const NAV = `
 <header class="site"><div class="wrap">
-  <a class="brand" href="${SITE.url}/"><img src="/logo-openshorts.png" alt="OpenShorts logo" width="26" height="26">OpenShorts</a>
+  <a class="brand" href="${SITE.url}/"><img src="/logo-getshorts.png" alt="GetShorts logo" width="26" height="26">GetShorts</a>
   <nav class="nav">
     <a href="/free-ai-clip-generator">Clip generator</a>
     <a href="/tools" class="keep">Free tools</a>
@@ -473,7 +473,9 @@ export function renderPage(page, related = [], { cta = true, toolScript = '' } =
 ${page.noindex ? '' : `<link rel="canonical" href="${canonical}">\n`}<meta name="robots" content="${
     page.noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1'
   }">
-<link rel="icon" type="image/png" href="/logo-openshorts.png">
+<link rel="icon" type="image/png" href="/logo-getshorts.png">
+<link rel="shortcut icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/logo-getshorts.png">
 <link rel="stylesheet" href="/fonts.css">
 ${ANALYTICS}
 ${page.noindex ? '' : ATTRIBUTION}
@@ -504,7 +506,7 @@ ${
   page.noindex
     ? ''
     : `<div class="byline">
-  By the OpenShorts team<span class="sep">·</span>
+  By the GetShorts team<span class="sep">·</span>
   Published <time datetime="${esc(page.published || SITE.published)}">${esc(page.published || SITE.published)}</time><span class="sep">·</span>
   Updated <time datetime="${esc(page.updated || SITE.updated)}">${esc(page.updated || SITE.updated)}</time>
 </div>`

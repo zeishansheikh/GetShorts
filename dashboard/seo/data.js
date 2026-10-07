@@ -15,7 +15,7 @@ export const SITE = {
   url: 'https://github.com/zeishansheikh/GetShorts',
   name: 'GetShorts',
   repo: 'https://github.com/zeishansheikh/GetShorts',
-  logo: '/logo-openshorts.png',
+  logo: '/logo-getshorts.png',
   ogImage: '/og-image.png',
   updated: '2026-10-07',
   published: '2026-10-07',
