@@ -74,7 +74,7 @@ export default function OAuthConsent() {
         <div className="w-12 h-12 rounded-full bg-brass/10 flex items-center justify-center mx-auto mb-4">
           <Plug size={20} className="text-brass" />
         </div>
-        <h1 className="font-display lowercase text-2xl text-ink mb-2">Connect {name} to OpenShorts</h1>
+        <h1 className="font-display lowercase text-2xl text-ink mb-2">Connect {name} to GetShorts</h1>
         {error ? (
           <p className="text-warn text-sm">{error}</p>
         ) : (

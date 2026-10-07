@@ -103,7 +103,7 @@ export default function WatermarkModal({ onClose, onContinue, onUpgrade, preview
   return (
     <Modal isOpen onClose={() => close(false)} eyebrow="FREE PLAN" title="Want the watermark off?" size="md">
       <p className="text-muted text-sm mb-4">
-        Clips on the free plan carry the OpenShorts mark and are deleted after 7 days.
+        Clips on the free plan carry the GetShorts mark and are deleted after 7 days.
         Upgrade and <b className="text-ink font-medium">these exact clips lose the mark on the spot</b>,
         no re-render, and stay in your library for good.
       </p>

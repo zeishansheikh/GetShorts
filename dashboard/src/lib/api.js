@@ -3,7 +3,7 @@
 // a 402 (quota exceeded) into a typed QuotaError the UI can catch to prompt a top-up.
 import { getApiUrl } from '../config';
 
-export const AUTH_TOKEN_KEY = 'openshorts_auth';
+export const AUTH_TOKEN_KEY = 'getshorts_auth';
 
 export const getToken = () => localStorage.getItem(AUTH_TOKEN_KEY) || '';
 export const setToken = (t) => localStorage.setItem(AUTH_TOKEN_KEY, t);

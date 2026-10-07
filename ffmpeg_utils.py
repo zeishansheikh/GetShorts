@@ -96,7 +96,7 @@ LOUDNORM_FILTER = "loudnorm=I=-14:TP=-2.0:LRA=11"
 # voice or a person (dubbing, AI actors), not on an ordinary clip, whose audio
 # and pixels are the user's own footage. Marking everything would make the tag
 # mean nothing.
-AI_DISCLOSURE = "AI-generated content produced with OpenShorts (openshorts.app)"
+AI_DISCLOSURE = "AI-generated content produced with GetShorts"
 
 
 def mark_ai_generated(path, detail=""):

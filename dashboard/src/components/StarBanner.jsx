@@ -1,13 +1,9 @@
 import { Github } from 'lucide-react';
 
-export const REPO_URL = 'https://github.com/mutonby/openshorts';
+export const REPO_URL = 'https://github.com/zeishansheikh/GetShorts';
 
-// Small "star us" ask, once per job, while the clips render: that wait is the
-// only dead time in the flow. Asking again on the finished clips made it two
-// asks for the same job, and the old "free while it renders" wording put the
-// word free next to the product name for anyone who missed the pun — the one
-// thing our copy must never do. No incentive attached.
-export default function StarBanner({ message = 'Enjoying OpenShorts?' }) {
+// Small "star us" ask, once per job, while the clips render
+export default function StarBanner({ message = 'Enjoying GetShorts?' }) {
   return (
     <a
       href={REPO_URL}

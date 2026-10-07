@@ -10,7 +10,7 @@ H = 64 * S                 # lockup height
 PAD = 6 * S
 
 font = ImageFont.truetype("/System/Library/Fonts/HelveticaNeue.ttc", int(38 * S), index=1)  # Bold
-text = "OpenShorts"
+text = "GetShorts"
 
 tmp = Image.new("RGBA", (10, 10))
 tb = ImageDraw.Draw(tmp).textbbox((0, 0), text, font=font)

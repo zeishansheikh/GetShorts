@@ -27,7 +27,7 @@ const GOALS = [
   ['subtitles', 'Subtitles'],
   ['dubbing', 'Dubbing into other languages'],
   ['api_agents', 'API / AI agent integration'],
-  ['self_host', 'Self-hosting OpenShorts'],
+  ['self_host', 'Self-hosting GetShorts'],
 ];
 
 const ROLES = [
@@ -90,7 +90,7 @@ export default function OnboardingSurvey({ onDone }) {
            )}>
       <div className="space-y-6">
         <section>
-          <h3 className="text-sm text-ink mb-2">What do you want to make with OpenShorts? <span className="text-muted">(pick any)</span></h3>
+          <h3 className="text-sm text-ink mb-2">What do you want to make with GetShorts? <span className="text-muted">(pick any)</span></h3>
           <div className="flex flex-wrap gap-2">
             {GOALS.map(([value, label]) => (
               <button key={value} type="button" onClick={() => toggleGoal(value)} className={chip(goals.includes(value))}>

@@ -1,7 +1,7 @@
 services:
   backend:
     build: .
-    container_name: openshorts-backend
+    container_name: getshorts-backend
     ports:
       - "8000:8000"
     volumes:
@@ -14,7 +14,7 @@ services:
     build:
       context: ./dashboard
       target: dev
-    container_name: openshorts-frontend
+    container_name: getshorts-frontend
     ports:
       - "5175:5173"
     volumes:
@@ -28,7 +28,7 @@ services:
     build:
       context: .
       dockerfile: render-service/Dockerfile
-    container_name: openshorts-renderer
+    container_name: getshorts-renderer
     ports:
       - "3100:3100"
     volumes:

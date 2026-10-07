@@ -12,15 +12,13 @@
  */
 
 export const SITE = {
-  // www is what the apex already redirects to, so it is the canonical host.
-  url: 'https://www.openshorts.app',
-  name: 'OpenShorts',
-  repo: 'https://github.com/mutonby/openshorts',
-  logo: 'https://www.openshorts.app/logo-openshorts.png',
-  ogImage: 'https://www.openshorts.app/og-image.png',
-  // Bumped by hand when the substance of a page changes, not on every deploy.
-  updated: '2026-10-05',
-  published: '2024-06-01',
+  url: 'https://github.com/zeishansheikh/GetShorts',
+  name: 'GetShorts',
+  repo: 'https://github.com/zeishansheikh/GetShorts',
+  logo: '/logo-openshorts.png',
+  ogImage: '/og-image.png',
+  updated: '2026-10-07',
+  published: '2026-10-07',
 }
 
 /* Profiles that let an engine resolve "OpenShorts" to one entity. The repo has

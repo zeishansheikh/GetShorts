@@ -74,7 +74,7 @@ export default function DeleteAccountCard() {
         <Trash2 size={16} className="text-danger" /> Delete account
       </h3>
       <p className="text-muted text-sm">
-        Close your OpenShorts account and erase everything we hold about you. This
+        Close your GetShorts account and erase everything we hold about you. This
         cannot be undone.
       </p>
 

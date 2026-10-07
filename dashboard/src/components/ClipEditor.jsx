@@ -16,7 +16,7 @@ const MIN_SEGMENT_SECONDS = 0.5;
 const SNAP_WINDOW_SECONDS = 0.35;
 
 // Hiding the source is a working preference, not a per-clip one, so it sticks.
-const HIDE_SOURCE_KEY = 'openshorts_editor_hide_source';
+const HIDE_SOURCE_KEY = 'getshorts_editor_hide_source';
 
 // Words per memoised transcript slice. See TranscriptChunk for why this exists.
 const CHUNK_WORDS = 50;

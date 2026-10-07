@@ -1139,7 +1139,7 @@ export default function SaaShortsTab({ geminiApiKey, elevenLabsKey, falKey, uplo
                 <span>
                   Share this video in the public gallery
                   <span className="block text-xs text-muted">
-                    Your video, product name and script will be visible at openshorts.app/gallery
+                    Your video, product name and script will be visible in the gallery (/gallery)
                   </span>
                 </span>
               </label>

@@ -240,7 +240,7 @@ export default function AutopilotTab({ onOpenProject, onUpgrade, justConnected }
           </h3>
           <p className="text-muted text-sm mb-4">
             Autopilot runs on your plan&apos;s minutes, so it comes with Starter, Creator and Pro.
-            Every new upload turns into shorts without you opening OpenShorts.
+            Every new upload turns into shorts without you opening GetShorts.
           </p>
           <button onClick={() => { track('AutopilotUpgradeClick'); onUpgrade?.(); }} className="btn-primary">
             <Rocket size={16} /> choose a plan

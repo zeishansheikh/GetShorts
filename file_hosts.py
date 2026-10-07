@@ -59,6 +59,6 @@ def resolve(url: str) -> str:
 
 
 def _fetch(url: str) -> str:
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (OpenShorts)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (GetShorts)"})
     with urllib.request.urlopen(req, timeout=20) as r:
         return r.read(200_000).decode("utf-8", "ignore")

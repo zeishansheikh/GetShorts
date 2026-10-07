@@ -34,11 +34,11 @@ from subtitles import CAPTION_PRESETS, line_budget
 router = APIRouter()
 
 PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
-SERVER_INFO = {"name": "openshorts", "title": "OpenShorts", "version": "1.0.0"}
+SERVER_INFO = {"name": "getshorts", "title": "GetShorts", "version": "1.0.0"}
 INSTRUCTIONS = (
-    "OpenShorts turns long videos (YouTube URLs or direct video files) into "
+    "GetShorts turns long videos (YouTube URLs or direct video files) into "
     "viral-ready vertical clips. When the user gives you a video URL, hand it "
-    "to process_video exactly as written: OpenShorts downloads, transcribes "
+    "to process_video exactly as written: GetShorts downloads, transcribes "
     "and analyses the video on its own servers. Do NOT try to open, fetch, "
     "search for, summarise or transcribe the URL yourself first; you cannot "
     "reach the video and it is not needed. Typical flow: process_video -> "

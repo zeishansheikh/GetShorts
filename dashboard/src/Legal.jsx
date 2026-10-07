@@ -100,13 +100,10 @@ export default function Legal() {
                 </div>
 
                 <p className="text-sm text-muted">
-                    openshorts.app is operated by TONVI TECH SL (CIF B-19780394), Calle Puerta del Mar 18,
-                    29005 Málaga, Spain. Questions:{' '}
-                    <a className="underline underline-offset-2 hover:text-brass transition-colors" href={`mailto:${SUPPORT_EMAIL}`}>
-                        {SUPPORT_EMAIL}
-                    </a>
-                    . Self-hosted instances are operated by their administrators under the MIT License; these
-                    documents govern the hosted service only.
+                    GetShorts is an open-source video platform available under the MIT License at{' '}
+                    <a className="underline underline-offset-2 hover:text-brass transition-colors" href="https://github.com/zeishansheikh/GetShorts" target="_blank" rel="noopener noreferrer">
+                        github.com/zeishansheikh/GetShorts
+                    </a>.
                 </p>
             </main>
         </div>
