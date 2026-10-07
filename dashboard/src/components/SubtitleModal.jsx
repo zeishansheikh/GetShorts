@@ -50,25 +50,23 @@ const ANIMATION_OPTIONS = [
 const ANIMATION_TO_EFFECT = { pop: 'pop', 'word-highlight': 'glow', karaoke: 'highlight', none: 'none' };
 const EFFECT_TO_ANIMATION = { pop: 'pop', glow: 'word-highlight', highlight: 'karaoke', box: 'karaoke', none: 'none' };
 
-// Font size in the units /api/subtitle takes. M is what every clip ships
-// with (subtitles.AUTO_CAPTION_STYLE font_size 44), so opening the modal and
-// applying never shrinks the captions.
+// Font size in the units /api/subtitle takes (PlayResY=288 virtual space).
+// Default 8, with 6, 7 and 10 options so captions fit cleanly within screen boundaries.
 const SIZE_OPTIONS = [
-    { value: 34, label: 'S' },
-    { value: 44, label: 'M' },
-    { value: 56, label: 'L' },
-    { value: 70, label: 'XL' },
+    { value: 6, label: '6' },
+    { value: 7, label: '7' },
+    { value: 8, label: '8' },
+    { value: 10, label: '10' },
 ];
 
-// Characters per line at size M, per font. Bigger text gets proportionally fewer,
-// so a line still fits the 9:16 frame instead of wrapping into a wall of text.
+// Characters per line at size 8, per font.
 const LINE_CHARS = { 'Barlow-ExtraLight': 14, 'Barlow ExtraLight': 14, Anton: 16, 'Montserrat ExtraBold': 9, Impact: 16 };
 const lineBudget = (fontName, fontSize, oneWord) =>
-    oneWord ? 1 : Math.max(6, Math.round((LINE_CHARS[fontName] || 14) * 44 / fontSize));
+    oneWord ? 1 : Math.max(6, Math.min(24, Math.round((LINE_CHARS[fontName] || 14) * 8 / (fontSize <= 12 ? fontSize : 8))));
 
 // libass sizes text against PlayResY 288 (subtitles.generate_ass): one unit
-// there is ~3.85 CSS px in the 1080x1920 preview, measured on burned frames.
-const PREVIEW_PX_PER_UNIT = 3.85;
+// corresponds to ~6.67 CSS px in the 1080x1920 preview.
+const PREVIEW_PX_PER_UNIT = 6.67;
 
 const POSITION_OPTIONS = [
     { value: 'top', label: 'top' },
@@ -80,25 +78,25 @@ const POSITION_OPTIONS = [
 // dimmed base text + strong active word, optional glow/pop/box effect.
 const CAPTION_PRESETS = [
     // What every clip ships with (subtitles.AUTO_CAPTION_STYLE).
-    { id: 'default', label: 'Default',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 4, fontSize: 44 },
+    { id: 'default', label: 'Default',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
     // Trending short-form looks (2026): word-by-word build-up, a box behind
     // the active word, one big word at a time, and the clean shadow-only look.
-    { id: 'hormozi', label: 'Hormozi',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 4, shadow: 2, reveal: true, fontSize: 44 },
-    { id: 'pill',    label: 'Pill',     style: 'karaoke', effect: 'highlight', highlightColor: '#7C3AED', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 3, fontSize: 44 },
-    { id: 'oneword', label: 'One word', style: 'karaoke', effect: 'pop',       highlightColor: '#FFFFFF', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 5, oneWord: true, fontSize: 70 },
-    { id: 'clean',   label: 'Clean',    style: 'karaoke', effect: 'none',      highlightColor: '#FFFFFF', baseOpacity: 0.7, uppercase: false, fontName: 'Montserrat ExtraBold', borderWidth: 0, shadow: 2, fontSize: 34 },
-    { id: 'lime',    label: 'Lime box', style: 'karaoke', effect: 'highlight', highlightColor: '#A3FF12', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 3, fontSize: 44 },
-    { id: 'tiktok',  label: 'TikTok',     style: 'karaoke', effect: 'none', highlightColor: '#FE2C55', baseOpacity: 0.75, uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'reels',   label: 'Reels',      style: 'karaoke', effect: 'none', highlightColor: '#E1306C', baseOpacity: 0.7,  uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'shorts',  label: 'Shorts Pop', style: 'karaoke', effect: 'pop',  highlightColor: '#FF0000', baseOpacity: 0.7,  uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'gold',    label: 'Gold Glow',  style: 'karaoke', effect: 'glow', highlightColor: '#FFD700', baseOpacity: 0.6,  uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'neon',    label: 'Neon',       style: 'karaoke', effect: 'glow', highlightColor: '#00FF88', baseOpacity: 0.55, uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'cyber',   label: 'Cyber',      style: 'karaoke', effect: 'glow', highlightColor: '#00FFFF', baseOpacity: 0.5,  uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'karaoke', label: 'Karaoke',    style: 'karaoke', effect: 'none', highlightColor: '#FF6B6B', baseOpacity: 0.6,  uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'minimal', label: 'Minimal',    style: 'karaoke', effect: 'none', highlightColor: '#FFFFFF', baseOpacity: 0.65, uppercase: false, fontName: 'Verdana', borderWidth: 1 },
-    { id: 'beast',   label: 'Beast',      style: 'karaoke', effect: 'pop',  highlightColor: '#FFD700', baseOpacity: 1.0,  uppercase: true,  fontName: 'Impact',  borderWidth: 3 },
-    { id: 'boxed',   label: 'Boxed',      style: 'karaoke', effect: 'box',  highlightColor: '#7C3AED', baseOpacity: 0.85, uppercase: false, fontName: 'Verdana', borderWidth: 2 },
-    { id: 'classic', label: 'Classic',    style: 'classic', effect: 'none', highlightColor: '#FFD700', baseOpacity: 1.0,  uppercase: false, fontName: 'Verdana', borderWidth: 2 },
+    { id: 'hormozi', label: 'Hormozi',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 1, shadow: 1, reveal: true, fontSize: 8 },
+    { id: 'pill',    label: 'Pill',     style: 'karaoke', effect: 'highlight', highlightColor: '#7C3AED', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 1, fontSize: 8 },
+    { id: 'oneword', label: 'One word', style: 'karaoke', effect: 'pop',       highlightColor: '#FFFFFF', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 2, oneWord: true, fontSize: 10 },
+    { id: 'clean',   label: 'Clean',    style: 'karaoke', effect: 'none',      highlightColor: '#FFFFFF', baseOpacity: 0.7, uppercase: false, fontName: 'Montserrat ExtraBold', borderWidth: 0, shadow: 1, fontSize: 7 },
+    { id: 'lime',    label: 'Lime box', style: 'karaoke', effect: 'highlight', highlightColor: '#A3FF12', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 1, fontSize: 8 },
+    { id: 'tiktok',  label: 'TikTok',     style: 'karaoke', effect: 'none', highlightColor: '#FE2C55', baseOpacity: 0.75, uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'reels',   label: 'Reels',      style: 'karaoke', effect: 'none', highlightColor: '#E1306C', baseOpacity: 0.7,  uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'shorts',  label: 'Shorts Pop', style: 'karaoke', effect: 'pop',  highlightColor: '#FF0000', baseOpacity: 0.7,  uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'gold',    label: 'Gold Glow',  style: 'karaoke', effect: 'glow', highlightColor: '#FFD700', baseOpacity: 0.6,  uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'neon',    label: 'Neon',       style: 'karaoke', effect: 'glow', highlightColor: '#00FF88', baseOpacity: 0.55, uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'cyber',   label: 'Cyber',      style: 'karaoke', effect: 'glow', highlightColor: '#00FFFF', baseOpacity: 0.5,  uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'karaoke', label: 'Karaoke',    style: 'karaoke', effect: 'none', highlightColor: '#FF6B6B', baseOpacity: 0.6,  uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'minimal', label: 'Minimal',    style: 'karaoke', effect: 'none', highlightColor: '#FFFFFF', baseOpacity: 0.65, uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 7 },
+    { id: 'beast',   label: 'Beast',      style: 'karaoke', effect: 'pop',  highlightColor: '#FFD700', baseOpacity: 1.0,  uppercase: true,  fontName: 'Impact',  borderWidth: 1, fontSize: 8 },
+    { id: 'boxed',   label: 'Boxed',      style: 'karaoke', effect: 'box',  highlightColor: '#7C3AED', baseOpacity: 0.85, uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
+    { id: 'classic', label: 'Classic',    style: 'classic', effect: 'none', highlightColor: '#FFD700', baseOpacity: 1.0,  uppercase: false, fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
 ];
 
 // Mirrors subtitles._luminance (Rec. 601).
@@ -118,12 +116,12 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
     // Opens on the look the clip already has (the Default preset), so
     // "apply" without touching anything changes nothing.
     const [position, setPosition] = useState('bottom');
-    const [fontSize, setFontSize] = useState(44);
+    const [fontSize, setFontSize] = useState(8);
     const [fontName, setFontName] = useState('Barlow-ExtraLight');
     const [fontColor, setFontColor] = useState('#FFFFFF');
     const [highlightColor, setHighlightColor] = useState('#FFE500');
     const [borderColor, setBorderColor] = useState('#000000');
-    const [borderWidth, setBorderWidth] = useState(4);
+    const [borderWidth, setBorderWidth] = useState(1);
     const [bgColor, setBgColor] = useState('#000000');
     const [bgOpacity, setBgOpacity] = useState(0.0);
     const [animation, setAnimationState] = useState('pop');
@@ -228,11 +226,11 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
         maxDurationMs: maxDuration * 1000,
         style: {
             fontFamily: fontName,
-            fontSize: Math.round(fontSize * 0.85 * PREVIEW_PX_PER_UNIT),
+            fontSize: Math.round((fontSize <= 12 ? fontSize : 8) * (1920 / 288)),
             fontColor,
             highlightColor,
             borderColor,
-            borderWidth: borderWidth * 1.5,
+            borderWidth: Math.max(1, Math.round(borderWidth * 1.5)),
             bgColor,
             bgOpacity,
             animation,
@@ -259,13 +257,15 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
     const fallbackPreviewStyle = {
         fontFamily: fontName,
         color: fontColor,
-        fontSize: '20px',
+        fontSize: `${Math.max(14, Math.round((fontSize <= 12 ? fontSize : 8) * 2.2))}px`,
         fontWeight: 'bold',
-        maxWidth: '85%',
+        maxWidth: '80%',
         padding: '6px 12px',
         borderRadius: '4px',
         textAlign: 'center',
         lineHeight: '1.3',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
         ...(bgOpacity > 0
             ? {
                 backgroundColor: `${bgColor}${Math.round(bgOpacity * 255).toString(16).padStart(2, '0')}`,

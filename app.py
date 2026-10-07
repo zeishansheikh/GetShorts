@@ -4015,11 +4015,11 @@ class SubtitleRequest(BaseModel):
     job_id: str
     clip_index: int
     position: str = "bottom" # top, middle, bottom
-    font_size: int = 16
+    font_size: int = 8
     font_name: str = "Barlow-ExtraLight"
     font_color: str = "#FFFFFF"
     border_color: str = "#000000"
-    border_width: int = 2
+    border_width: int = 1
     bg_color: str = "#000000"
     bg_opacity: float = 0.0
     style: str = "classic"  # classic (uniform color) or karaoke (word highlight)

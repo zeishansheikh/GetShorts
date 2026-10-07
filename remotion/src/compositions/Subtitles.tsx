@@ -110,7 +110,9 @@ const SubtitleBlock: React.FC<SubtitleBlockProps> = ({
           justifyContent: "center",
           direction: block.words.some((w) => RTL_CHARS.test(w.text)) ? "rtl" : "ltr",
           gap: "6px 8px",
-          maxWidth: "85%",
+          maxWidth: "80%",
+          padding: "0 24px",
+          boxSizing: "border-box",
           ...bgStyle,
         }}
       >

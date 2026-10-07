@@ -240,11 +240,11 @@ AUTO_CAPTION_STYLE = {
     "style": "karaoke",
     "alignment": "bottom",
     "font_name": "Barlow-ExtraLight",
-    "font_size": 44,
+    "font_size": 8,
     "font_color": "#FFFFFF",
     "highlight_color": "#FFE500",
     "border_color": "#000000",
-    "border_width": 4,
+    "border_width": 1,
     "effect": "pop",
     "base_opacity": 1.0,
     "uppercase": True,
@@ -261,29 +261,29 @@ _PRESET_BASE = {"style": "karaoke", "font_color": "#FFFFFF", "bg_opacity": 0.0,
                 "base_opacity": 1.0, "reveal": False, "shadow": 0,
                 "max_duration": 1.4}
 CAPTION_PRESETS = {
-    "default": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 44,
-                "highlight_color": "#FFE500", "border_width": 4, "effect": "pop",
+    "default": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 8,
+                "highlight_color": "#FFE500", "border_width": 1, "effect": "pop",
                 "uppercase": True, "max_chars": 16},
     # Words appear as they are spoken, yellow active word, shadow.
-    "hormozi": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 44,
-                "highlight_color": "#FFE500", "border_width": 4, "shadow": 2,
-                "effect": "pop", "uppercase": True, "reveal": True, "max_chars": 9},
+    "hormozi": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 8,
+                "highlight_color": "#FFE500", "border_width": 1, "shadow": 1,
+                "effect": "pop", "uppercase": True, "reveal": True, "max_chars": 12},
     # Solid box behind the active word (CapCut / Submagic).
-    "pill": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 44,
-             "highlight_color": "#7C3AED", "border_width": 3, "effect": "highlight",
-             "uppercase": True, "max_chars": 9},
-    "lime": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 44,
-             "highlight_color": "#A3FF12", "border_width": 3, "effect": "highlight",
-             "uppercase": True, "max_chars": 9},
+    "pill": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 8,
+             "highlight_color": "#7C3AED", "border_width": 1, "effect": "highlight",
+             "uppercase": True, "max_chars": 12},
+    "lime": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 8,
+             "highlight_color": "#A3FF12", "border_width": 1, "effect": "highlight",
+             "uppercase": True, "max_chars": 12},
     # One big word at a time.
-    "oneword": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 70,
-                "highlight_color": "#FFFFFF", "border_width": 5, "effect": "pop",
+    "oneword": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 10,
+                "highlight_color": "#FFFFFF", "border_width": 2, "effect": "pop",
                 "uppercase": True, "max_chars": 1},
     # No outline, soft shadow, sentence case.
-    "clean": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 34,
-              "highlight_color": "#FFFFFF", "border_width": 0, "shadow": 2,
+    "clean": {**_PRESET_BASE, "font_name": "Montserrat ExtraBold", "font_size": 7,
+              "highlight_color": "#FFFFFF", "border_width": 0, "shadow": 1,
               "effect": "none", "uppercase": False, "base_opacity": 0.7,
-              "max_chars": 12},
+              "max_chars": 14},
 }
 
 # Characters per line at font size 44, per font.
@@ -299,7 +299,9 @@ _LINE_CHARS = {
 
 def line_budget(font_name, font_size):
     """max_chars that keeps one line inside the 9:16 frame at this size."""
-    size = _clamp_number(font_size, 10, 200, 44)
+    size = _clamp_number(font_size, 4, 200, 8)
+    if size <= 12:
+        return max(6, min(24, round(_LINE_CHARS.get(font_name, 14) * 8 / size)))
     return max(6, round(_LINE_CHARS.get(font_name, 14) * 44 / size))
 
 
@@ -351,11 +353,11 @@ def _dim_hex_color(hex_color, opacity, fallback="FFFFFF"):
 
 
 def generate_ass(transcript, clip_start, clip_end, output_path,
-                 max_chars=20, max_duration=2.0, alignment='bottom',
-                 fontsize=16, font_name="Barlow-ExtraLight", font_color="#FFFFFF",
-                 border_color="#000000", border_width=2,
-                 highlight_color="#FFD700", bg_color="#000000", bg_opacity=0.0,
-                 effect="none", base_opacity=1.0, uppercase=False,
+                 max_chars=16, max_duration=1.4, alignment='bottom',
+                 fontsize=8, font_name="Barlow-ExtraLight", font_color="#FFFFFF",
+                 border_color="#000000", border_width=1,
+                 highlight_color="#FFE500", bg_color="#000000", bg_opacity=0.0,
+                 effect="pop", base_opacity=1.0, uppercase=True,
                  margin_v=SAFE_MARGIN_V, split_ranges=None,
                  reveal=False, shadow=0):
     """
@@ -382,9 +384,13 @@ def generate_ass(transcript, clip_start, clip_end, output_path,
         return False
 
     # Match the SRT burn path: PlayResY 288 keeps font sizes consistent.
-    final_fontsize = int(_clamp_number(fontsize, 10, 200, 16) * 0.85)
-    if final_fontsize < 10:
-        final_fontsize = 10
+    # For sizes <= 12 (e.g. 6, 7, 8), keep exact integer font size so text never cuts off.
+    if fontsize <= 12:
+        final_fontsize = int(round(_clamp_number(fontsize, 4, 12, 8)))
+    else:
+        final_fontsize = int(_clamp_number(fontsize, 4, 200, 8) * 0.85)
+    if final_fontsize < 4:
+        final_fontsize = 4
 
     align_map = {'top': 8, 'middle': 5, 'bottom': 2}
     ass_alignment = align_map.get(str(alignment).lower(), 2)
@@ -584,9 +590,9 @@ def _sanitize_font_name(name):
     return _FONT_ALIASES.get(cleaned.lower(), cleaned)
 
 
-def subtitles_filter(srt_path, alignment=2, fontsize=16,
+def subtitles_filter(srt_path, alignment=2, fontsize=8,
                      font_name="Barlow-ExtraLight", font_color="#FFFFFF",
-                     border_color="#000000", border_width=2,
+                     border_color="#000000", border_width=1,
                      bg_color="#000000", bg_opacity=0.0):
     """The -vf string burn_subtitles uses (also fed to hooks.add_hook_to_video)."""
     # Position mapping
@@ -600,14 +606,17 @@ def subtitles_filter(srt_path, alignment=2, fontsize=16,
         ass_alignment = 2
 
     # Font size scaling for ASS virtual resolution (PlayResY=288 default)
-    # For vertical 1080x1920 video, we need larger text for readability
-    final_fontsize = int(_clamp_number(fontsize, 10, 200, 16) * 0.85)
-    if final_fontsize < 10:
-        final_fontsize = 10
+    # For small sizes (<=12, e.g. 6, 7, 8), keep exact font size to stay properly inside screen.
+    if fontsize <= 12:
+        final_fontsize = int(round(_clamp_number(fontsize, 4, 12, 8)))
+    else:
+        final_fontsize = int(_clamp_number(fontsize, 4, 200, 8) * 0.85)
+    if final_fontsize < 4:
+        final_fontsize = 4
 
     safe_font_name = _sanitize_font_name(font_name)
     bg_opacity = _clamp_number(bg_opacity, 0.0, 1.0, 0.0)
-    border_width = _clamp_number(border_width, 0, 10, 2)
+    border_width = _clamp_number(border_width, 0, 10, 1)
 
     # Path handling for FFmpeg filter syntax
     safe_srt_path = _escape_ffmpeg_filter_value(srt_path)
@@ -638,6 +647,8 @@ def subtitles_filter(srt_path, alignment=2, fontsize=16,
         f"BorderStyle={border_style},"
         f"Outline={outline_width},"
         f"Shadow=0,"
+        f"MarginL=10,"
+        f"MarginR=10,"
         f"MarginV={SAFE_MARGIN_V},"
         f"Bold=1"
     )
@@ -662,9 +673,9 @@ def subtitles_filter(srt_path, alignment=2, fontsize=16,
     return vf
 
 
-def burn_subtitles(video_path, srt_path, output_path, alignment=2, fontsize=16,
+def burn_subtitles(video_path, srt_path, output_path, alignment=2, fontsize=8,
                    font_name="Barlow-ExtraLight", font_color="#FFFFFF",
-                   border_color="#000000", border_width=2,
+                   border_color="#000000", border_width=1,
                    bg_color="#000000", bg_opacity=0.0):
     """
     Burns subtitles into the video using FFmpeg.

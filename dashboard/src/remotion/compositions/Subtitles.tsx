@@ -120,7 +120,11 @@ const SubtitleBlock: React.FC<SubtitleBlockProps> = ({
           fontFamily: fontStack,
           fontSize: style.fontSize,
           fontWeight: 700,
-          maxWidth: "85%",
+          maxWidth: "80%",
+          padding: "0 24px",
+          wordBreak: "break-word",
+          overflowWrap: "break-word",
+          boxSizing: "border-box",
           ...bgStyle,
         }}
       >
