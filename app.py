@@ -4016,7 +4016,7 @@ class SubtitleRequest(BaseModel):
     clip_index: int
     position: str = "bottom" # top, middle, bottom
     font_size: int = 16
-    font_name: str = "Verdana"
+    font_name: str = "Barlow-ExtraLight"
     font_color: str = "#FFFFFF"
     border_color: str = "#000000"
     border_width: int = 2
@@ -5632,7 +5632,7 @@ async def get_social_user(request: Request):
             resp = await client.get(url, headers=headers)
             if resp.status_code != 200:
                 print(f"❌ Upload-Post User Fetch Error: {resp.text}")
-                raise HTTPException(status_code=resp.status_code, detail=f"Failed to fetch user: {resp.text}")
+                return {"profiles": [], "error": f"Failed to fetch user ({resp.status_code}): {resp.text}"}
             
             data = resp.json()
             # Never log the body: on the managed key it lists every profile
@@ -5674,9 +5674,11 @@ async def get_social_user(request: Request):
 
             return {"profiles": profiles_list}
             
-            
+        except HTTPException:
+            raise
         except Exception as e:
-             raise HTTPException(status_code=500, detail=str(e))
+            print(f"❌ Social User Exception: {e}")
+            return {"profiles": [], "error": str(e)}
 
 
 # --- Social analytics (thin proxies over Upload-Post) ---

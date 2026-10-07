@@ -1,13 +1,13 @@
-# OpenShorts.app
+# GetShorts
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://opensource.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![GitHub stars](https://img.shields.io/github/stars/mutonby/openshorts?style=social)](https://github.com/mutonby/openshorts)
-[![Last Commit](https://img.shields.io/github/last-commit/mutonby/openshorts)](https://github.com/mutonby/openshorts/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/zeishansheikh/GetShorts?style=social)](https://github.com/zeishansheikh/GetShorts)
+[![Last Commit](https://img.shields.io/github/last-commit/zeishansheikh/GetShorts)](https://github.com/zeishansheikh/GetShorts/commits/main)
 
-**Open source AI video platform** with 3 tools in one: **Clip Generator**, **AI Shorts (UGC videos with AI actors)**, and **YouTube Studio**.
+**Open source AI video platform** to create viral Shorts, Reels & TikTok clips with smart reframing, auto subtitles with custom typography (`Barlow-ExtraLight`), AI UGC shorts with talking avatars, and YouTube studio tools.
 
 ![Your podcast, and the vertical clip OpenShorts makes of it: both speakers stacked, captions on the seam](screenshots/split-before-after.gif)
 
@@ -201,8 +201,8 @@ Self-hosting OpenShorts is free. You provide the machine and you only pay for th
 
 ### 1. Clone
 ```bash
-git clone https://github.com/mutonby/openshorts.git
-cd openshorts
+git clone https://github.com/zeishansheikh/GetShorts.git
+cd GetShorts
 ```
 
 ### 2. Configure (optional)
@@ -475,7 +475,7 @@ lives in [`examples/n8n/`](examples/n8n/).
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mutonby/openshorts&type=Date)](https://star-history.com/#mutonby/openshorts&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=zeishansheikh/GetShorts&type=Date)](https://star-history.com/#zeishansheikh/GetShorts&Date)
 
 ## Contributions
 

@@ -239,7 +239,7 @@ SAFE_MARGIN_V = 43
 AUTO_CAPTION_STYLE = {
     "style": "karaoke",
     "alignment": "bottom",
-    "font_name": "Anton",
+    "font_name": "Barlow-ExtraLight",
     "font_size": 44,
     "font_color": "#FFFFFF",
     "highlight_color": "#FFE500",
@@ -261,7 +261,7 @@ _PRESET_BASE = {"style": "karaoke", "font_color": "#FFFFFF", "bg_opacity": 0.0,
                 "base_opacity": 1.0, "reveal": False, "shadow": 0,
                 "max_duration": 1.4}
 CAPTION_PRESETS = {
-    "default": {**_PRESET_BASE, "font_name": "Anton", "font_size": 44,
+    "default": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 44,
                 "highlight_color": "#FFE500", "border_width": 4, "effect": "pop",
                 "uppercase": True, "max_chars": 16},
     # Words appear as they are spoken, yellow active word, shadow.
@@ -276,7 +276,7 @@ CAPTION_PRESETS = {
              "highlight_color": "#A3FF12", "border_width": 3, "effect": "highlight",
              "uppercase": True, "max_chars": 9},
     # One big word at a time.
-    "oneword": {**_PRESET_BASE, "font_name": "Anton", "font_size": 70,
+    "oneword": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 70,
                 "highlight_color": "#FFFFFF", "border_width": 5, "effect": "pop",
                 "uppercase": True, "max_chars": 1},
     # No outline, soft shadow, sentence case.
@@ -286,9 +286,15 @@ CAPTION_PRESETS = {
               "max_chars": 12},
 }
 
-# Characters per line at font size 44, per font (Anton is condensed,
-# Montserrat wide). Mirrors lineBudget in SubtitleModal.jsx.
-_LINE_CHARS = {"Anton": 16, "Montserrat ExtraBold": 9, "Impact": 16}
+# Characters per line at font size 44, per font.
+# Mirrors lineBudget in SubtitleModal.jsx.
+_LINE_CHARS = {
+    "Barlow-ExtraLight": 14,
+    "Barlow ExtraLight": 14,
+    "Anton": 16,
+    "Montserrat ExtraBold": 9,
+    "Impact": 16,
+}
 
 
 def line_budget(font_name, font_size):
@@ -346,7 +352,7 @@ def _dim_hex_color(hex_color, opacity, fallback="FFFFFF"):
 
 def generate_ass(transcript, clip_start, clip_end, output_path,
                  max_chars=20, max_duration=2.0, alignment='bottom',
-                 fontsize=16, font_name="Verdana", font_color="#FFFFFF",
+                 fontsize=16, font_name="Barlow-ExtraLight", font_color="#FFFFFF",
                  border_color="#000000", border_width=2,
                  highlight_color="#FFD700", bg_color="#000000", bg_opacity=0.0,
                  effect="none", base_opacity=1.0, uppercase=False,
@@ -562,15 +568,24 @@ def _clamp_number(value, lo, hi, default):
     return max(lo, min(hi, num))
 
 
+_FONT_ALIASES = {
+    "barlow-extralight": "Barlow ExtraLight",
+    "barlow_extralight": "Barlow ExtraLight",
+    "barlow extralight": "Barlow ExtraLight",
+}
+
+
 def _sanitize_font_name(name):
     """Strip anything but [A-Za-z0-9 _-] so the font name can't inject extra
     ASS override fields (commas/braces/backslashes) into force_style."""
     cleaned = _FONT_NAME_RE.sub('', str(name or '')).strip()
-    return cleaned or "Verdana"
+    if not cleaned:
+        return "Verdana"
+    return _FONT_ALIASES.get(cleaned.lower(), cleaned)
 
 
 def subtitles_filter(srt_path, alignment=2, fontsize=16,
-                     font_name="Verdana", font_color="#FFFFFF",
+                     font_name="Barlow-ExtraLight", font_color="#FFFFFF",
                      border_color="#000000", border_width=2,
                      bg_color="#000000", bg_opacity=0.0):
     """The -vf string burn_subtitles uses (also fed to hooks.add_hook_to_video)."""
@@ -648,7 +663,7 @@ def subtitles_filter(srt_path, alignment=2, fontsize=16,
 
 
 def burn_subtitles(video_path, srt_path, output_path, alignment=2, fontsize=16,
-                   font_name="Verdana", font_color="#FFFFFF",
+                   font_name="Barlow-ExtraLight", font_color="#FFFFFF",
                    border_color="#000000", border_width=2,
                    bg_color="#000000", bg_opacity=0.0):
     """

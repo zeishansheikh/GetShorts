@@ -9,7 +9,7 @@ import {
 } from "remotion";
 import type { SubtitleConfig } from "../lib/types";
 import { groupCaptionsIntoBlocks, getActiveWordIndex } from "../lib/captions";
-import { getFontStack, antonFontFace, montserratFontFace } from "../lib/fonts";
+import { getFontStack, antonFontFace, montserratFontFace, barlowExtraLightFontFace } from "../lib/fonts";
 
 interface SubtitlesProps {
   config: SubtitleConfig;
@@ -36,7 +36,7 @@ export const Subtitles: React.FC<SubtitlesProps> = ({ config }) => {
 
   return (
     <AbsoluteFill>
-      <style>{antonFontFace + montserratFontFace}</style>
+      <style>{antonFontFace + montserratFontFace + barlowExtraLightFontFace}</style>
       {blocks.map((block, i) => {
         const startFrame = Math.round((block.startMs / 1000) * fps);
         const durationFrames = Math.max(

@@ -39,6 +39,18 @@ export const antonFontFace = `
 }
 `;
 
+/** Barlow ExtraLight (bundled) */
+export const BARLOW_EXTRALIGHT_FONT_FAMILY = "Barlow-ExtraLight";
+
+export const barlowExtraLightFontFace = `
+@font-face {
+  font-family: '${BARLOW_EXTRALIGHT_FONT_FAMILY}';
+  src: url('${staticFile("fonts/Barlow-ExtraLight.ttf")}') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+}
+`;
+
 /**
  * Hook typefaces: CSS family + share of the 90% box width used as font size.
  * Must mirror hooks.py HOOK_FONTS.
@@ -54,6 +66,8 @@ export const HOOK_FONTS: Record<string, { family: string; weight: number; factor
  * These match the options available in SubtitleModal.jsx.
  */
 export const SUBTITLE_FONTS: Record<string, string> = {
+  "Barlow-ExtraLight": `'${BARLOW_EXTRALIGHT_FONT_FAMILY}', 'Barlow ExtraLight', 'Barlow', sans-serif`,
+  "Barlow ExtraLight": `'${BARLOW_EXTRALIGHT_FONT_FAMILY}', 'Barlow ExtraLight', 'Barlow', sans-serif`,
   Verdana: "Verdana, Geneva, sans-serif",
   Arial: "Arial, Helvetica, sans-serif",
   Impact: "Impact, Haettenschweiler, sans-serif",

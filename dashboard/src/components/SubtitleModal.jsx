@@ -6,6 +6,7 @@ import Modal from './ui/Modal';
 import SegmentedControl from './ui/SegmentedControl';
 
 const FONT_OPTIONS = [
+    { value: 'Barlow-ExtraLight', label: 'Barlow ExtraLight' },
     { value: 'Anton', label: 'Anton' },
     { value: 'Montserrat ExtraBold', label: 'Montserrat' },
     { value: 'Verdana', label: 'Verdana' },
@@ -59,10 +60,9 @@ const SIZE_OPTIONS = [
     { value: 70, label: 'XL' },
 ];
 
-// Characters per line at size M, per font: Anton is condensed, Montserrat
-// wide. Bigger text gets proportionally fewer, so a line still fits the 9:16
-// frame instead of wrapping into a wall of text.
-const LINE_CHARS = { Anton: 16, 'Montserrat ExtraBold': 9, Impact: 16 };
+// Characters per line at size M, per font. Bigger text gets proportionally fewer,
+// so a line still fits the 9:16 frame instead of wrapping into a wall of text.
+const LINE_CHARS = { 'Barlow-ExtraLight': 14, 'Barlow ExtraLight': 14, Anton: 16, 'Montserrat ExtraBold': 9, Impact: 16 };
 const lineBudget = (fontName, fontSize, oneWord) =>
     oneWord ? 1 : Math.max(6, Math.round((LINE_CHARS[fontName] || 14) * 44 / fontSize));
 
@@ -80,12 +80,12 @@ const POSITION_OPTIONS = [
 // dimmed base text + strong active word, optional glow/pop/box effect.
 const CAPTION_PRESETS = [
     // What every clip ships with (subtitles.AUTO_CAPTION_STYLE).
-    { id: 'default', label: 'Default',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Anton', borderWidth: 4, fontSize: 44 },
+    { id: 'default', label: 'Default',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 4, fontSize: 44 },
     // Trending short-form looks (2026): word-by-word build-up, a box behind
     // the active word, one big word at a time, and the clean shadow-only look.
     { id: 'hormozi', label: 'Hormozi',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 4, shadow: 2, reveal: true, fontSize: 44 },
     { id: 'pill',    label: 'Pill',     style: 'karaoke', effect: 'highlight', highlightColor: '#7C3AED', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 3, fontSize: 44 },
-    { id: 'oneword', label: 'One word', style: 'karaoke', effect: 'pop',       highlightColor: '#FFFFFF', baseOpacity: 1.0, uppercase: true,  fontName: 'Anton', borderWidth: 5, oneWord: true, fontSize: 70 },
+    { id: 'oneword', label: 'One word', style: 'karaoke', effect: 'pop',       highlightColor: '#FFFFFF', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 5, oneWord: true, fontSize: 70 },
     { id: 'clean',   label: 'Clean',    style: 'karaoke', effect: 'none',      highlightColor: '#FFFFFF', baseOpacity: 0.7, uppercase: false, fontName: 'Montserrat ExtraBold', borderWidth: 0, shadow: 2, fontSize: 34 },
     { id: 'lime',    label: 'Lime box', style: 'karaoke', effect: 'highlight', highlightColor: '#A3FF12', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 3, fontSize: 44 },
     { id: 'tiktok',  label: 'TikTok',     style: 'karaoke', effect: 'none', highlightColor: '#FE2C55', baseOpacity: 0.75, uppercase: false, fontName: 'Verdana', borderWidth: 2 },
@@ -119,7 +119,7 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
     // "apply" without touching anything changes nothing.
     const [position, setPosition] = useState('bottom');
     const [fontSize, setFontSize] = useState(44);
-    const [fontName, setFontName] = useState('Anton');
+    const [fontName, setFontName] = useState('Barlow-ExtraLight');
     const [fontColor, setFontColor] = useState('#FFFFFF');
     const [highlightColor, setHighlightColor] = useState('#FFE500');
     const [borderColor, setBorderColor] = useState('#000000');
