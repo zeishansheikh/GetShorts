@@ -261,6 +261,13 @@ _PRESET_BASE = {"style": "karaoke", "font_color": "#FFFFFF", "bg_opacity": 0.0,
                 "base_opacity": 1.0, "reveal": False, "shadow": 0,
                 "max_duration": 1.4}
 CAPTION_PRESETS = {
+    # Viral kinetic subtitles (phrase-by-phrase, two-line punch keyword stack, pure white)
+    "kinetic": {
+        "style": "kinetic", "font_name": "Montserrat ExtraBold", "font_size": 8,
+        "font_color": "#FFFFFF", "border_width": 0, "shadow": 0, "effect": "kinetic",
+        "uppercase": True, "max_chars": 12, "max_duration": 1.4, "bg_opacity": 0.0,
+        "base_opacity": 1.0, "reveal": False,
+    },
     "default": {**_PRESET_BASE, "font_name": "Barlow-ExtraLight", "font_size": 8,
                 "highlight_color": "#FFE500", "border_width": 1, "effect": "pop",
                 "uppercase": True, "max_chars": 16},
@@ -352,6 +359,249 @@ def _dim_hex_color(hex_color, opacity, fallback="FFFFFF"):
     return f"{r:02X}{g:02X}{b:02X}"
 
 
+_KINETIC_STOP_WORDS = {
+    "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
+    "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
+    "below", "between", "both", "but", "by", "can", "can't", "cannot", "could",
+    "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down",
+    "during", "each", "few", "for", "from", "further", "had", "hadn't", "has",
+    "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her",
+    "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's",
+    "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it",
+    "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my",
+    "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other",
+    "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "shan't",
+    "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such",
+    "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then",
+    "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've",
+    "this", "those", "through", "to", "too", "under", "until", "up", "very", "was",
+    "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what",
+    "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's",
+    "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd",
+    "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"
+}
+
+_KINETIC_HIGH_IMPACT_WORDS = {
+    "everything", "nothing", "never", "always", "skills", "money", "million", "billion",
+    "dollar", "dollars", "secret", "truth", "viral", "huge", "insane", "crazy", "fast",
+    "power", "powerful", "success", "life", "future", "world", "stop", "danger", "win",
+    "winner", "lose", "free", "dead", "kill", "die", "best", "worst", "mistake", "fix",
+    "rule", "rules", "game", "change", "changed", "business", "growth", "watch", "now",
+    "everybody", "everyone", "nobody", "forever", "impossible", "simple", "easy", "hard"
+}
+
+
+def _detect_kinetic_punch_word(words):
+    """
+    Given a list of word dicts [{'word': ..., 'start': ..., 'end': ...}],
+    returns (top_text, punch_word).
+    """
+    if not words:
+        return "", ""
+
+    def clean_text(t):
+        return re.sub(r'[^a-z0-9]', '', str(t or '').lower())
+
+    if len(words) == 1:
+        raw = re.sub(r'^[^a-zA-Z0-9$!%?]+|[^a-zA-Z0-9$!%?]+$', '', words[0]['word'].strip())
+        return "", (raw or words[0]['word'].strip()).upper()
+
+    best_score = -9999
+    best_idx = len(words) - 1
+
+    for idx, w in enumerate(words):
+        clean = clean_text(w['word'])
+        if not clean:
+            continue
+        score = len(clean) * 1.5
+        if clean in _KINETIC_HIGH_IMPACT_WORDS:
+            score += 15
+        if re.search(r'\d', clean):
+            score += 12
+        if w['word'].strip().isupper() and len(clean) > 1:
+            score += 8
+        if clean in _KINETIC_STOP_WORDS:
+            score -= 10
+        score += idx * 2.0  # End-focus bias
+
+        if score > best_score:
+            best_score = score
+            best_idx = idx
+
+    if best_idx == len(words) - 1:
+        top_text = " ".join(w['word'].strip() for w in words[:best_idx])
+        punch_raw = re.sub(r'^[^a-zA-Z0-9$!%?]+|[^a-zA-Z0-9$!%?]+$', '', words[best_idx]['word'].strip())
+        return top_text, (punch_raw or words[best_idx]['word'].strip()).upper()
+
+    last_clean = clean_text(words[-1]['word'])
+    if last_clean not in _KINETIC_STOP_WORDS and len(last_clean) >= 3:
+        top_text = " ".join(w['word'].strip() for w in words[:-1])
+        punch_raw = re.sub(r'^[^a-zA-Z0-9$!%?]+|[^a-zA-Z0-9$!%?]+$', '', words[-1]['word'].strip())
+        return top_text, (punch_raw or words[-1]['word'].strip()).upper()
+
+    top_text = " ".join(w['word'].strip() for w in words[:best_idx])
+    punch_words = " ".join(w['word'].strip() for w in words[best_idx:])
+    return top_text, punch_words.upper()
+
+
+def _collect_kinetic_blocks(transcript, clip_start, clip_end, min_duration=0.7, max_duration=1.5):
+    """Group words into kinetic phrases (1-4 words, ~0.8-1.5s)."""
+    flat_words = []
+    for segment in transcript.get('segments', []):
+        flat_words.extend(segment.get('words', []))
+    flat_words = merge_continuation_words(flat_words)
+
+    words = []
+    for word_info in flat_words:
+        if word_info.get('end', 0) > clip_start and word_info.get('start', 0) < clip_end:
+            cleaned = _normalize_subtitle_word(word_info.get('word', ''))
+            if not cleaned:
+                continue
+            words.append({
+                'word': cleaned,
+                'start': max(0, word_info['start'] - clip_start),
+                'end': max(0, word_info['end'] - clip_start),
+            })
+
+    if not words:
+        return []
+
+    blocks = []
+    current_words = []
+    block_start = 0.0
+
+    def clean_text(t):
+        return re.sub(r'[^a-z0-9]', '', str(t or '').lower())
+
+    for word in words:
+        if not current_words:
+            current_words = [word]
+            block_start = word['start']
+            continue
+
+        duration = word['end'] - block_start
+        prev_word = current_words[-1]
+        speech_pause = word['start'] - prev_word['end']
+        ends_with_punct = bool(re.search(r'[.!?]$', prev_word['word'].strip()))
+        is_single_emphatic = (len(current_words) == 1 and
+                              clean_text(prev_word['word']) in _KINETIC_HIGH_IMPACT_WORDS and
+                              duration >= 0.6)
+
+        should_close = (len(current_words) >= 4 or
+                        duration >= max_duration or
+                        speech_pause > 0.3 or
+                        ends_with_punct or
+                        is_single_emphatic or
+                        (len(current_words) >= 2 and duration >= min_duration and
+                         re.match(r'^(to|in|on|at|for|with|and|but|or|because|if|so|that)$', word['word'].strip(), re.I)))
+
+        if should_close:
+            top_text, punch_word = _detect_kinetic_punch_word(current_words)
+            blocks.append({
+                'words': list(current_words),
+                'start': block_start,
+                'end': current_words[-1]['end'],
+                'top_text': top_text,
+                'punch_word': punch_word,
+            })
+            current_words = [word]
+            block_start = word['start']
+        else:
+            current_words.append(word)
+
+    if current_words:
+        top_text, punch_word = _detect_kinetic_punch_word(current_words)
+        blocks.append({
+            'words': list(current_words),
+            'start': block_start,
+            'end': current_words[-1]['end'],
+            'top_text': top_text,
+            'punch_word': punch_word,
+        })
+
+    # Extend gap under 150ms to next block to prevent flicker
+    for i in range(len(blocks) - 1):
+        next_start = blocks[i + 1]['start']
+        if next_start > blocks[i]['end'] and (next_start - blocks[i]['end']) < 0.15:
+            blocks[i]['end'] = next_start
+
+    return blocks
+
+
+def generate_kinetic_ass(transcript, clip_start, clip_end, output_path,
+                         font_name="Montserrat ExtraBold", **kwargs):
+    """
+    Generates viral-style kinetic subtitles for vertical video (9:16, 1080x1920):
+    - Horizontally centered (x = 540 = 50% width).
+    - Vertically anchored at 56.5% height (y = 1085 in 1060-1110 range).
+    - Pure white (#FFFFFF), no stroke, no background box, no highlight color.
+    - Normal words ~4.7% height (90px), emphasis keyword ~11% height (210px).
+    - Two-line stack: small words on top, BIG keyword below.
+    - Fast scale pop: 100% to 104% over ~80ms.
+    """
+    blocks = _collect_kinetic_blocks(transcript, clip_start, clip_end)
+    if not blocks:
+        return False
+
+    safe_font = _sanitize_font_name(font_name or "Montserrat ExtraBold")
+
+    header = (
+        "[Script Info]\n"
+        "ScriptType: v4.00+\n"
+        "PlayResX: 1080\n"
+        "PlayResY: 1920\n"
+        "WrapStyle: 0\n"
+        "ScaledBorderAndShadow: yes\n"
+        "\n"
+        "[V4+ Styles]\n"
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
+        "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
+        "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+        f"Style: Kinetic,{safe_font},90,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,0,0,5,108,108,0,1\n"
+        "\n"
+        "[Events]\n"
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    )
+
+    events = []
+    for b in blocks:
+        ev_start = b['start']
+        ev_end = b['end']
+        if ev_end <= ev_start:
+            continue
+
+        punch_word = _escape_ass_text(b['punch_word'])
+        top_text = _escape_ass_text(b['top_text'])
+
+        # Dynamic font size clamp if keyword is long so it fits within 80% line width
+        kw_len = len(punch_word)
+        if kw_len > 7:
+            punch_fs = max(90, min(210, int(860 / (kw_len * 0.58))))
+        else:
+            punch_fs = 210
+
+        # Fast scale pop over 80ms: \fscx104\fscy104\t(0,80,\fscx100\fscy100)
+        # Position anchored at vertical center ~56.5% height (y=1085, x=540)
+        pop_prefix = r"{\an5\pos(540,1085)\fscx104\fscy104\t(0,80,\fscx100\fscy100)"
+
+        if top_text:
+            text = f"{pop_prefix}\\fs90}}{top_text}\\N{{\\fs{punch_fs}}}{punch_word}"
+        else:
+            text = f"{pop_prefix}\\fs{punch_fs}}}{punch_word}"
+
+        events.append(
+            f"Dialogue: 0,{_ass_time(ev_start)},{_ass_time(ev_end)},Kinetic,,0,0,0,,{text}"
+        )
+
+    if not events:
+        return False
+
+    with open(output_path, 'w', encoding='utf-8-sig') as f:
+        f.write(header + "\n".join(events) + "\n")
+
+    return True
+
+
 def generate_ass(transcript, clip_start, clip_end, output_path,
                  max_chars=16, max_duration=1.4, alignment='bottom',
                  fontsize=8, font_name="Barlow-ExtraLight", font_color="#FFFFFF",
@@ -359,26 +609,28 @@ def generate_ass(transcript, clip_start, clip_end, output_path,
                  highlight_color="#FFE500", bg_color="#000000", bg_opacity=0.0,
                  effect="pop", base_opacity=1.0, uppercase=True,
                  margin_v=SAFE_MARGIN_V, split_ranges=None,
-                 reveal=False, shadow=0):
+                 reveal=False, shadow=0, style="karaoke", **kwargs):
     """
-    Generates a karaoke-style ASS file: each block is shown like the SRT path,
-    but the currently spoken word is rendered in highlight_color (modern
-    TikTok/CapCut caption look). One dialogue event per word, back to back, so
-    the highlight moves with the audio without flicker.
+    Generates a karaoke-style or kinetic ASS file:
+    When style="kinetic" or effect="kinetic", delegates to generate_kinetic_ass.
+    Otherwise generates modern karaoke ASS captions with per-word highlight.
 
     effect: "none" | "glow" (neon shine around the active word) |
             "pop" (active word scales up) | "box" (thick colored outline) |
             "highlight" (active word on a solid box in highlight_color, the
             CapCut / Submagic look).
-    base_opacity: opacity of the non-active words — dimmed base text is the
-    modern captioneer look (e.g. 0.4).
+    base_opacity: opacity of the non-active words (dimmed base text, e.g. 0.4).
     reveal: words not spoken yet are invisible, so the line builds up word
-    by word (Hormozi style). They keep their slot (alpha, not removal), so
-    the line never reflows while it fills.
-    shadow: drop shadow depth in PlayRes units (0 = none). With border_width
-    0 it is the soft "clean" look; a hard outline does not need it.
+    by word (Hormozi style).
+    shadow: drop shadow depth in PlayRes units (0 = none).
     max_chars=1 puts one word on screen at a time.
     """
+    if style == "kinetic" or effect == "kinetic":
+        return generate_kinetic_ass(
+            transcript, clip_start, clip_end, output_path,
+            font_name=font_name or "Montserrat ExtraBold", **kwargs
+        )
+
     blocks = _collect_word_blocks(transcript, clip_start, clip_end, max_chars, max_duration)
     if not blocks:
         return False
@@ -578,6 +830,15 @@ _FONT_ALIASES = {
     "barlow-extralight": "Barlow ExtraLight",
     "barlow_extralight": "Barlow ExtraLight",
     "barlow extralight": "Barlow ExtraLight",
+    "barlow-extrabold": "Barlow ExtraBold",
+    "barlow_extrabold": "Barlow ExtraBold",
+    "barlow extrabold": "Barlow ExtraBold",
+    "montserrat-extrabold": "Montserrat ExtraBold",
+    "montserrat_extrabold": "Montserrat ExtraBold",
+    "montserrat extrabold": "Montserrat ExtraBold",
+    "inter-extrabold": "Inter ExtraBold",
+    "inter_extrabold": "Inter ExtraBold",
+    "inter extrabold": "Inter ExtraBold",
 }
 
 

@@ -946,7 +946,7 @@ def _burn_caption_style(video_path, out_path, sub_path, transcript, start, end,
                  if s["max_chars"] is not None else None)
     max_duration = (max(0.5, min(5.0, float(s["max_duration"])))
                     if s["max_duration"] is not None else None)
-    if s["style"] == "karaoke":
+    if s["style"] in ("karaoke", "kinetic") or s.get("effect") == "kinetic":
         opts = dict(
             split_ranges=split_ranges,
             alignment=s["position"], fontsize=s["font_size"],
@@ -955,7 +955,8 @@ def _burn_caption_style(video_path, out_path, sub_path, transcript, start, end,
             highlight_color=s["highlight_color"], bg_color=s["bg_color"],
             bg_opacity=s["bg_opacity"], effect=s["effect"],
             base_opacity=s["base_opacity"], uppercase=s["uppercase"],
-            reveal=s["reveal"], shadow=s["shadow"])
+            reveal=s["reveal"], shadow=s["shadow"],
+            style=s["style"])
         if max_chars is not None:
             opts["max_chars"] = max_chars
         if max_duration is not None:
@@ -5040,7 +5041,7 @@ async def add_subtitles(req: SubtitleRequest, request: Request):
 
     # Define outputs
     generation_id = int(time.time())
-    is_karaoke = req.style == "karaoke"
+    is_karaoke = req.style in ("karaoke", "kinetic") or req.effect == "kinetic"
     srt_filename = f"subs_{req.clip_index}_{generation_id}.{'ass' if is_karaoke else 'srt'}"
     srt_path = os.path.join(output_dir, srt_filename)
 
@@ -5058,7 +5059,7 @@ async def add_subtitles(req: SubtitleRequest, request: Request):
         border_width=req.border_width, highlight_color=req.highlight_color,
         bg_color=req.bg_color, bg_opacity=req.bg_opacity,
         effect=req.effect, base_opacity=req.base_opacity, uppercase=req.uppercase,
-        reveal=req.reveal, shadow=req.shadow,
+        reveal=req.reveal, shadow=req.shadow, style=req.style,
     )
     if req.max_chars is not None:
         karaoke_opts["max_chars"] = max(1, min(40, int(req.max_chars)))

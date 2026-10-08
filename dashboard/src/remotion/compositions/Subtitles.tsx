@@ -8,7 +8,12 @@ import {
   interpolate,
 } from "remotion";
 import type { SubtitleConfig } from "../lib/types";
-import { groupCaptionsIntoBlocks, getActiveWordIndex } from "../lib/captions";
+import {
+  groupCaptionsIntoBlocks,
+  groupCaptionsIntoKineticBlocks,
+  getActiveWordIndex,
+  type KineticCaptionBlock,
+} from "../lib/captions";
 import { getFontStack, antonFontFace, montserratFontFace, barlowExtraLightFontFace } from "../lib/fonts";
 
 interface SubtitlesProps {
@@ -28,6 +33,42 @@ const POSITION_MAP: Record<string, React.CSSProperties> = {
 
 export const Subtitles: React.FC<SubtitlesProps> = ({ config }) => {
   const { fps } = useVideoConfig();
+  const isKinetic =
+    config.style?.animation === "kinetic" ||
+    (config.style as any)?.style === "kinetic" ||
+    config.style?.isKinetic ||
+    config.kinetic;
+
+  if (isKinetic) {
+    const kineticBlocks = groupCaptionsIntoKineticBlocks(config.captions);
+    return (
+      <AbsoluteFill>
+        <style>{antonFontFace + montserratFontFace + barlowExtraLightFontFace}</style>
+        {kineticBlocks.map((block, i) => {
+          const startFrame = Math.round((block.startMs / 1000) * fps);
+          const durationFrames = Math.max(
+            1,
+            Math.round(((block.endMs - block.startMs) / 1000) * fps)
+          );
+
+          return (
+            <Sequence
+              key={`kinetic-${i}`}
+              from={startFrame}
+              durationInFrames={durationFrames}
+              layout="none"
+            >
+              <KineticSubtitleBlock
+                block={block}
+                config={config}
+              />
+            </Sequence>
+          );
+        })}
+      </AbsoluteFill>
+    );
+  }
+
   const blocks = groupCaptionsIntoBlocks(
     config.captions,
     config.maxChars ?? 20,
@@ -60,6 +101,111 @@ export const Subtitles: React.FC<SubtitlesProps> = ({ config }) => {
         );
       })}
     </AbsoluteFill>
+  );
+};
+
+interface KineticSubtitleBlockProps {
+  block: KineticCaptionBlock;
+  config: SubtitleConfig;
+}
+
+const KineticSubtitleBlock: React.FC<KineticSubtitleBlockProps> = ({
+  block,
+  config,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps, width, height } = useVideoConfig();
+
+  // Reference typography sizes derived as fractions of frame height:
+  // Normal words: ~4.7% of frame height (90px at 1080x1920)
+  // Emphasis keyword: ~11% of frame height (210px at 1080x1920)
+  // Tight line gap: ~15px at 1080x1920
+  const normalFontSize = Math.round(height * 0.047);
+  const baseEmphasisFontSize = Math.round(height * 0.11);
+  const lineGap = Math.round(height * (15 / 1920));
+  const maxLineWidth = Math.round(width * 0.8); // 80% of frame width (10% safe margins)
+
+  // Auto-downscale long emphasis keywords so they never overflow 80% line width
+  const charWidthFactor = 0.58;
+  const estimatedPunchWidth = block.punchWord.length * (baseEmphasisFontSize * charWidthFactor);
+  const emphasisFontSize =
+    estimatedPunchWidth > maxLineWidth
+      ? Math.max(normalFontSize, Math.round(maxLineWidth / (block.punchWord.length * charWidthFactor)))
+      : baseEmphasisFontSize;
+
+  // Fast scale pop (100% to 104% over ~80ms)
+  const popDurationFrames = Math.max(2, Math.round((80 / 1000) * fps));
+  const scale =
+    frame <= popDurationFrames
+      ? interpolate(
+          frame,
+          [0, Math.floor(popDurationFrames / 2), popDurationFrames],
+          [1.0, 1.04, 1.0],
+          { extrapolateRight: "clamp" }
+        )
+      : 1.0;
+
+  // Font: extra-bold grotesque sans-serif, weight 800
+  const requestedFont = config.style?.fontFamily || "Montserrat ExtraBold";
+  const fontStack = getFontStack(requestedFont) || `'Montserrat-ExtraBold', 'Montserrat', sans-serif`;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: "50%",
+        top: "56.5%", // Anchor vertical center at ~55-58% of frame height (around y=1060-1110)
+        transform: `translate(-50%, -50%) scale(${scale})`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        maxWidth: "80%",
+        width: "max-content",
+        boxSizing: "border-box",
+        pointerEvents: "none",
+        zIndex: 50,
+      }}
+    >
+      {block.topText ? (
+        <div
+          style={{
+            fontFamily: fontStack,
+            fontSize: normalFontSize,
+            fontWeight: 800,
+            color: "#FFFFFF", // Pure white, no stroke, no background box
+            lineHeight: 1.1,
+            textAlign: "center",
+            maxWidth: "100%",
+            wordBreak: "break-word",
+            overflowWrap: "break-word",
+            marginBottom: lineGap,
+            textShadow: "none",
+          }}
+        >
+          {block.topText}
+        </div>
+      ) : null}
+      <div
+        style={{
+          fontFamily: fontStack,
+          fontSize: emphasisFontSize,
+          fontWeight: 800,
+          color: "#FFFFFF", // Pure white, no stroke, no highlight color
+          textTransform: "uppercase",
+          lineHeight: 0.95,
+          letterSpacing: "0.01em",
+          textAlign: "center",
+          maxWidth: "100%",
+          wordBreak: "break-word",
+          overflowWrap: "break-word",
+          textShadow: "none",
+        }}
+      >
+        {block.punchWord}
+      </div>
+    </div>
   );
 };
 

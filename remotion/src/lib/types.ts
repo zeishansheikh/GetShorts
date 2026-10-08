@@ -8,7 +8,7 @@ export interface CaptionWord {
 }
 
 // --- Subtitle config ---
-export type SubtitleAnimation = "none" | "word-highlight" | "pop" | "karaoke";
+export type SubtitleAnimation = "none" | "word-highlight" | "pop" | "karaoke" | "kinetic";
 export type SubtitlePosition = "top" | "middle" | "bottom";
 
 export interface SubtitleStyle {
@@ -21,12 +21,14 @@ export interface SubtitleStyle {
   bgColor: string;
   bgOpacity: number;
   animation: SubtitleAnimation;
+  isKinetic?: boolean;
 }
 
 export interface SubtitleConfig {
   captions: CaptionWord[];
   position: SubtitlePosition;
   style: SubtitleStyle;
+  kinetic?: boolean;
 }
 
 // --- Hook config ---
@@ -95,7 +97,7 @@ export const subtitleStyleSchema = z.object({
   borderWidth: z.number(),
   bgColor: z.string(),
   bgOpacity: z.number().min(0).max(1),
-  animation: z.enum(["none", "word-highlight", "pop", "karaoke"]),
+  animation: z.enum(["none", "word-highlight", "pop", "karaoke", "kinetic"]),
 });
 
 export const subtitleConfigSchema = z.object({

@@ -38,6 +38,7 @@ const HIGHLIGHT_PRESETS = [
 ];
 
 const ANIMATION_OPTIONS = [
+    { value: 'kinetic', label: 'Kinetic Pop' },
     { value: 'pop', label: 'Pop' },
     { value: 'word-highlight', label: 'Glow' },
     { value: 'karaoke', label: 'Box' },
@@ -47,8 +48,8 @@ const ANIMATION_OPTIONS = [
 // Preview animation -> the effect burned server-side, so what the modal
 // plays is what the clip gets. 'karaoke' in the preview is a box behind the
 // active word, which is the 'highlight' effect.
-const ANIMATION_TO_EFFECT = { pop: 'pop', 'word-highlight': 'glow', karaoke: 'highlight', none: 'none' };
-const EFFECT_TO_ANIMATION = { pop: 'pop', glow: 'word-highlight', highlight: 'karaoke', box: 'karaoke', none: 'none' };
+const ANIMATION_TO_EFFECT = { kinetic: 'kinetic', pop: 'pop', 'word-highlight': 'glow', karaoke: 'highlight', none: 'none' };
+const EFFECT_TO_ANIMATION = { kinetic: 'kinetic', pop: 'pop', glow: 'word-highlight', highlight: 'karaoke', box: 'karaoke', none: 'none' };
 
 // Font size in the units /api/subtitle takes (PlayResY=288 virtual space).
 // Default 8, with 6, 7 and 10 options so captions fit cleanly within screen boundaries.
@@ -77,6 +78,8 @@ const POSITION_OPTIONS = [
 // Ready-made caption looks burned server-side as karaoke ASS (word highlight):
 // dimmed base text + strong active word, optional glow/pop/box effect.
 const CAPTION_PRESETS = [
+    // Viral-style kinetic subtitles (phrase-by-phrase, two-line punch keyword stack, pure white)
+    { id: 'kinetic', label: 'Kinetic', style: 'kinetic', effect: 'kinetic', highlightColor: '#FFFFFF', baseOpacity: 1.0, uppercase: true,  fontName: 'Montserrat ExtraBold', borderWidth: 0, shadow: 0, fontSize: 8 },
     // What every clip ships with (subtitles.AUTO_CAPTION_STYLE).
     { id: 'default', label: 'Default',  style: 'karaoke', effect: 'pop',       highlightColor: '#FFE500', baseOpacity: 1.0, uppercase: true,  fontName: 'Barlow-ExtraLight', borderWidth: 1, fontSize: 8 },
     // Trending short-form looks (2026): word-by-word build-up, a box behind
@@ -157,7 +160,11 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
         setShadow(p.shadow || 0);
         setOneWord(!!p.oneWord);
         if (p.fontSize) setFontSize(p.fontSize);
-        setAnimationState(p.style === 'karaoke' ? (EFFECT_TO_ANIMATION[p.effect] || 'none') : 'none');
+        if (p.style === 'kinetic') {
+            setAnimationState('kinetic');
+        } else {
+            setAnimationState(p.style === 'karaoke' ? (EFFECT_TO_ANIMATION[p.effect] || 'none') : 'none');
+        }
     };
 
     const maxChars = lineBudget(fontName, fontSize, oneWord);
@@ -219,24 +226,27 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
     if (!isOpen) return null;
 
     // Build subtitle config for Remotion
+    const isKinetic = style === 'kinetic' || animation === 'kinetic';
     const subtitleConfig = {
         captions,
         position,
         maxChars,
         maxDurationMs: maxDuration * 1000,
+        kinetic: isKinetic,
         style: {
             fontFamily: fontName,
             fontSize: Math.round((fontSize <= 12 ? fontSize : 8) * (1920 / 288)),
             fontColor,
             highlightColor,
             borderColor,
-            borderWidth: Math.max(1, Math.round(borderWidth * 1.5)),
+            borderWidth: isKinetic ? 0 : Math.max(0, Math.round(borderWidth * 1.5)),
             bgColor,
-            bgOpacity,
+            bgOpacity: isKinetic ? 0 : bgOpacity,
             animation,
+            isKinetic,
             // Karaoke look reflected live in the playable preview.
             baseOpacity: style === 'karaoke' ? baseOpacity : 1,
-            uppercase: style === 'karaoke' ? uppercase : false,
+            uppercase: uppercase,
             reveal: style === 'karaoke' && reveal,
             shadow: style === 'karaoke' ? shadow : 0,
             // Text on the active-word box: black on a light box, as burned.
@@ -296,13 +306,40 @@ export default function SubtitleModal({ isOpen, onClose, onGenerate, onApplyAll,
                         <>
                             <video src={videoUrl} className="w-full h-full object-contain opacity-50" muted playsInline />
                             <div className={`absolute w-full px-8 text-center transition-all duration-300 pointer-events-none flex flex-col items-center justify-center
-                                ${position === 'top' ? 'top-20' : ''}
-                                ${position === 'middle' ? 'top-0 bottom-0' : ''}
-                                ${position === 'bottom' ? 'bottom-20' : ''}
+                                ${isKinetic
+                                    ? 'top-[56.5%] -translate-y-1/2'
+                                    : (position === 'top' ? 'top-20' : position === 'middle' ? 'top-0 bottom-0' : 'bottom-20')
+                                }
                             `}>
-                                <span style={fallbackPreviewStyle}>
-                                    This is how your subtitles<br/>will appear on the video
-                                </span>
+                                {isKinetic ? (
+                                    <div className="flex flex-col items-center text-center">
+                                        <span style={{
+                                            fontFamily: fontName,
+                                            fontSize: '18px',
+                                            fontWeight: 800,
+                                            color: '#FFFFFF',
+                                            marginBottom: '6px',
+                                            lineHeight: 1.1,
+                                        }}>
+                                            This is how your
+                                        </span>
+                                        <span style={{
+                                            fontFamily: fontName,
+                                            fontSize: '42px',
+                                            fontWeight: 800,
+                                            color: '#FFFFFF',
+                                            textTransform: 'uppercase',
+                                            lineHeight: 0.95,
+                                            letterSpacing: '0.01em',
+                                        }}>
+                                            SUBTITLES
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span style={fallbackPreviewStyle}>
+                                        This is how your subtitles<br/>will appear on the video
+                                    </span>
+                                )}
                             </div>
                         </>
                     )}
