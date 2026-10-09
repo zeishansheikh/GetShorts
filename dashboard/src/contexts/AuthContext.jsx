@@ -139,6 +139,7 @@ export function AuthProvider({ children }) {
   const value = {
     billingEnabled: config.billingEnabled,
     localLlm: config.localLlm || null,
+    consensus: config.consensus || null,
     googleAuthEnabled: config.googleAuthEnabled,
     jobRetentionSeconds: config.jobRetentionSeconds || null,
     loading,

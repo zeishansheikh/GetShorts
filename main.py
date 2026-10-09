@@ -1908,14 +1908,31 @@ def score_batch_size():
     return 3 if llm_backend.active() else 8
 
 
-def get_viral_clips(transcript_result, video_duration):
-    """Two-pass clip selection: score transcript windows, then detail the best.
+_original_run_gemini_stage = _run_gemini_stage
 
-    Windowing gives even coverage on long videos (a single call over the whole
-    transcript clusters picks near the start), and the cheap scoring pass keeps
-    the expensive detail reasoning focused on the shortlist. Cuts are snapped to
-    word boundaries so clips don't start/end mid-word.
+
+def get_viral_clips(transcript_result, video_duration):
+    """Two-pass clip selection or 4-API-Key Consensus Pipeline.
+
+    When consensus mode is enabled (CONSENSUS_PIPELINE=1 or AI_API_KEY_1..4 configured),
+    runs the 4-stage multi-key consensus filtering pipeline.
     """
+    import consensus_config
+    is_legacy_mocked = (_run_gemini_stage is not _original_run_gemini_stage)
+    if consensus_config.is_consensus_enabled() and not is_legacy_mocked:
+        is_valid, issues = consensus_config.validate_consensus_config()
+        if not is_valid:
+            print(f"❌ Consensus configuration error: {issues}")
+            raise RuntimeError(f"Consensus configuration invalid: {'; '.join(issues)}")
+        import consensus_pipeline
+        words = []
+        for segment in transcript_result.get('segments', []):
+            for word in segment.get('words', []):
+                words.append({'w': word.get('word', ''), 's': word.get('start', 0), 'e': word.get('end', 0)})
+        return consensus_pipeline.run_consensus_pipeline(
+            transcript_result, video_duration, words=words
+        )
+
     language = str(transcript_result.get('language') or 'unknown')
     if llm_backend.active():
         # Self-hosted text model: no Google key needed for this stage.
@@ -2200,8 +2217,12 @@ if __name__ == '__main__':
                         help="Output aspect: vertical/auto (9:16), horizontal (keep 16:9), square (1:1).")
     parser.add_argument('--transcript', type=str,
                         help="Path to a precomputed transcript JSON (transcribe_media shape); skips transcription.")
+    parser.add_argument('--consensus', action='store_true',
+                        help="Enable 4-API-Key multi-stage AI consensus filtering pipeline.")
 
     args = parser.parse_args()
+    if args.consensus:
+        os.environ["CONSENSUS_PIPELINE"] = "1"
     output_format = args.format
 
     script_start_time = time.time()
@@ -2512,25 +2533,28 @@ if __name__ == '__main__':
             clip_workers = max(int(os.environ.get("CLIP_WORKERS", "6")), 1)
             shorts = clips_data['shorts']
             failed = []
-            if os.environ.get("WATERMARK") == "1":
-                # Tells the /videos guard that the clean twins in this
-                # directory are not for serving (watermarked.MARKER_FILE).
-                import watermarked
-                watermarked.mark_job(output_dir)
-            with ThreadPoolExecutor(max_workers=min(clip_workers, len(shorts))) as pool:
-                # Best clip first: the pool starts work in submission order, so
-                # the user's first delivered clip is the strongest one instead
-                # of whatever came first in the video.
-                futures = {pool.submit(_process_one_clip, i, shorts[i]): i
-                           for i in clip_render_order(shorts)}
-                for future in as_completed(futures):
-                    i = futures[future]
-                    try:
-                        if not future.result():
+            if not shorts:
+                print("   ℹ️ No clips to render. Job metadata saved.")
+            else:
+                if os.environ.get("WATERMARK") == "1":
+                    # Tells the /videos guard that the clean twins in this
+                    # directory are not for serving (watermarked.MARKER_FILE).
+                    import watermarked
+                    watermarked.mark_job(output_dir)
+                with ThreadPoolExecutor(max_workers=max(1, min(clip_workers, len(shorts)))) as pool:
+                    # Best clip first: the pool starts work in submission order, so
+                    # the user's first delivered clip is the strongest one instead
+                    # of whatever came first in the video.
+                    futures = {pool.submit(_process_one_clip, i, shorts[i]): i
+                               for i in clip_render_order(shorts)}
+                    for future in as_completed(futures):
+                        i = futures[future]
+                        try:
+                            if not future.result():
+                                failed.append(i)
+                        except Exception as e:
+                            print(f"   ❌ Clip {i+1} failed: {type(e).__name__}: {e}")
                             failed.append(i)
-                    except Exception as e:
-                        print(f"   ❌ Clip {i+1} failed: {type(e).__name__}: {e}")
-                        failed.append(i)
 
             # A clip that failed mid-render is usually a transient GPU / NVENC
             # condition on a busy card (22-sep-2026: 2 of 3 clips of a job "never

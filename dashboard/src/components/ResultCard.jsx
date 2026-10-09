@@ -864,6 +864,14 @@ export default function ResultCard({ clip, index, jobId, durable, uploadPostKey,
                     <div className="flex flex-wrap gap-1.5">
                         {durationReadout && <span className="readout bg-paper3 px-2 py-0.5 rounded-full shrink-0">{durationReadout}</span>}
                         {resolution && <span className="readout bg-paper3 px-2 py-0.5 rounded-full shrink-0">{resolution}</span>}
+                        {clip.consensus_metadata?.is_three_stage_consensus && (
+                            <span
+                                className="readout bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0 font-mono"
+                                title={`Verified by 3-stage AI consensus (IoU: ${clip.consensus_metadata.consensus_iou})`}
+                            >
+                                ✓ 3-stage consensus
+                            </span>
+                        )}
                         <span className="readout bg-paper3 px-2 py-0.5 rounded-full shrink-0">#shorts</span>
                         <span className="readout bg-paper3 px-2 py-0.5 rounded-full shrink-0">#viral</span>
                     </div>

@@ -2370,6 +2370,15 @@ def _purge_local_jobs_for_user(user_id) -> int:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Validate 4-API-Key consensus configuration if enabled
+    import consensus_config
+    if consensus_config.is_consensus_enabled():
+        _c_valid, _c_issues = consensus_config.validate_consensus_config()
+        if _c_valid:
+            print("🤝 [Consensus] 4-API-Key Consensus Pipeline is ENABLED and validated.")
+        else:
+            print(f"⚠️ [Consensus] Consensus pipeline enabled with issues: {'; '.join(_c_issues)}")
+
     # Rehydrate finished jobs from disk before serving (survives restarts).
     _recover_jobs_from_disk()
     # Re-enqueue jobs that were mid-processing when we stopped (redeploy). Their
@@ -2748,6 +2757,7 @@ async def health_ready():
 
 @app.get("/api/config")
 async def get_config():
+    import consensus_config
     return {
         "youtubeUrlEnabled": not DISABLE_YOUTUBE_URL,
         "billingEnabled": BILLING_ENABLED,
@@ -2756,6 +2766,8 @@ async def get_config():
         # Self-host only: tells the dashboard the Gemini key is optional
         # because the moment picker runs on an OpenAI-compatible server.
         "localLlm": None if BILLING_ENABLED else llm_backend.describe(),
+        # 4-API-Key Consensus Pipeline status (safe summary, no secrets exposed)
+        "consensus": consensus_config.get_consensus_status_summary(),
     }
 
 async def _probe_youtube_quality(url: str) -> dict:
@@ -3045,9 +3057,14 @@ async def process_endpoint(
     captions: Optional[str] = Form(None),
     upload_id: Optional[str] = Form(None),
     max_minutes: Optional[str] = Form(None),
+    consensus: Optional[str] = Form(None),
 ):
+    import consensus_config
     api_key = await resolve_gemini(request)
-    if not api_key and not (llm_backend.active() and not BILLING_ENABLED):
+    consensus_active = consensus_config.is_consensus_enabled() or (
+        consensus is not None and str(consensus).lower() in ("1", "true", "yes")
+    )
+    if not api_key and not (llm_backend.active() and not BILLING_ENABLED) and not consensus_active:
         # Self-host with an OpenAI-compatible server configured needs no
         # Google key for the core pipeline: the moment picker runs there and
         # the frame-based stages degrade on their own (layout_picker returns
@@ -3080,6 +3097,8 @@ async def process_endpoint(
         captions = body.get("captions")
         upload_id = body.get("upload_id")
         max_minutes = body.get("max_minutes")
+        if "consensus" in body:
+            consensus = body.get("consensus")
 
     # Normalize output format (auto = keep pipeline default).
     if output_format not in ("vertical", "horizontal", "square"):
@@ -3232,6 +3251,10 @@ async def process_endpoint(
     if captions is not None and str(captions).lower() in ("0", "false", "no"):
         env["AUTO_CAPTIONS"] = "0"
         print(f"[captions] job={job_id} auto-captions off")
+
+    if consensus is not None and str(consensus).lower() in ("1", "true", "yes"):
+        env["CONSENSUS_PIPELINE"] = "1"
+        print(f"[consensus] job={job_id} consensus pipeline requested")
 
     input_path = None
     if url:
