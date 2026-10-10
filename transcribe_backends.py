@@ -18,7 +18,10 @@ Invariants the consumers rely on (clip cutting, karaoke subtitles, Remotion):
   - all numerics are native Python floats (json.dump of the transcript).
   - words sorted by start, segments chronological, absolute file timestamps.
 
-TRANSCRIBE_BACKEND env: "whisper" (default) | "parakeet".
+TRANSCRIBE_BACKEND env: "phonon" (default) | "whisper" | "parakeet".
+The phonon-2 path runs FermionResearch/Phonon-2 locally via the fermion-research
+CPU engine with persistent model worker reuse. It falls back to whisper
+automatically if the model fails or produces no usable words.
 The parakeet path falls back to whisper automatically when the model errors,
 produces no usable words, or the detected language is outside its 25
 supported European languages (e.g. Japanese/Chinese/Arabic uploads).
@@ -33,6 +36,7 @@ import tempfile
 import threading
 import time
 
+import phonon_backend as pb
 from subtitles import (
     get_whisper_config,
     WHISPER_TRANSCRIBE_PARAMS,
@@ -382,6 +386,10 @@ def release_models():
         pass
     if "onnxruntime" in sys.modules or "faster_whisper" in sys.modules:
         print("🧹 [ASR] resident models released")
+    try:
+        pb.terminate_phonon_worker()
+    except Exception as e:
+        print(f"⚠️ [ASR] phonon worker cleanup failed ({type(e).__name__}: {e})")
 
 
 def _extract_wav(media_path):
@@ -430,6 +438,39 @@ def _words_from_tokens(tokens, timestamps, seg_start, seg_end):
         word["end"] = float(max(word["start"] + 0.05, min(next_start, cap)))
 
     return words
+
+
+def _transcribe_with_phonon(media_path):
+    """Transcribe audio with Phonon-2 (FermionResearch/Phonon-2)."""
+    wav_path = _extract_wav(media_path)
+    try:
+        try:
+            duration = os.path.getsize(wav_path) / 32000.0
+        except OSError:
+            duration = 0.0
+
+        progress = _TranscribeProgress(duration)
+        progress.update(duration * 0.1)
+
+        if pb.is_worker_enabled():
+            try:
+                raw_res = pb._WORKER_CLIENT.transcribe(wav_path)
+            except Exception as worker_err:
+                print(f"⚠️ [ASR] Phonon-2 worker failed ({worker_err}) — attempting one-shot fallback", flush=True)
+                model_dir = pb.resolve_phonon_model_dir()
+                raw_res = pb._transcribe_oneshot(wav_path, model_dir)
+        else:
+            model_dir = pb.resolve_phonon_model_dir()
+            raw_res = pb._transcribe_oneshot(wav_path, model_dir)
+
+        progress.update(progress.total)
+        transcript = pb.adapt_phonon_transcript(raw_res)
+        return transcript
+    finally:
+        try:
+            os.remove(wav_path)
+        except OSError:
+            pass
 
 
 def _transcribe_with_parakeet(media_path):
@@ -659,9 +700,29 @@ def transcribe_media(media_path):
             "This video has no audio track. GetShorts finds viral moments from "
             "speech, so it needs a video with audio.")
 
-    backend = os.environ.get("TRANSCRIBE_BACKEND", "whisper").strip().lower()
+    backend = os.environ.get("TRANSCRIBE_BACKEND", "phonon").strip().lower()
 
-    if backend == "parakeet":
+    if backend == "phonon":
+        try:
+            transcript = _transcribe_with_phonon(media_path)
+            reason = pb.phonon_fallback_reason(transcript)
+            if reason is None:
+                print(f"🎙️ [ASR] phonon-2 ok: lang={transcript['language']} "
+                      f"segments={len(transcript['segments'])}")
+                return transcript
+            if not pb.is_fallback_to_whisper_enabled():
+                raise RuntimeError(
+                    f"Phonon-2 transcription rejected ({reason}) and strict mode "
+                    f"(PHONON_STRICT=1 or PHONON_FALLBACK_TO_WHISPER=0) is enabled.")
+            print(f"⚠️ [ASR] phonon-2 result rejected ({reason}) — "
+                  f"falling back to whisper")
+        except Exception as e:
+            if not pb.is_fallback_to_whisper_enabled():
+                raise
+            print(f"⚠️ [ASR] phonon-2 failed ({type(e).__name__}: {e}) — "
+                  f"falling back to whisper")
+
+    elif backend == "parakeet":
         try:
             transcript = _transcribe_with_parakeet(media_path)
             reason = _parakeet_fallback_reason(transcript)

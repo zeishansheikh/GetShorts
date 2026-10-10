@@ -147,13 +147,41 @@ def test_transcribe_media_falls_back_on_parakeet_exception(monkeypatch):
     assert tb.transcribe_media("video.mp4") is sentinel
 
 
-def test_transcribe_media_default_is_whisper(monkeypatch):
-    sentinel = {"text": "ok", "language": "en", "segments": []}
+def test_transcribe_media_default_is_phonon(monkeypatch):
+    sentinel = {
+        "text": "phonon ok",
+        "language": "en",
+        "segments": [{"start": 0.0, "end": 1.0, "text": "phonon ok",
+                      "words": [{"word": " phonon", "start": 0.0, "end": 0.5}]}]
+    }
     monkeypatch.delenv("TRANSCRIBE_BACKEND", raising=False)
     monkeypatch.setattr(tb, "_has_audio_stream", lambda path: True)
+    monkeypatch.setattr(tb, "_transcribe_with_phonon", lambda path: sentinel)
     monkeypatch.setattr(
-        tb, "_transcribe_with_parakeet",
+        tb, "_transcribe_with_whisper",
         lambda path: (_ for _ in ()).throw(AssertionError("should not run")))
+    assert tb.transcribe_media("video.mp4") is sentinel
+
+
+def test_transcribe_media_explicit_whisper(monkeypatch):
+    sentinel = {"text": "whisper ok", "language": "en", "segments": []}
+    monkeypatch.setenv("TRANSCRIBE_BACKEND", "whisper")
+    monkeypatch.setattr(tb, "_has_audio_stream", lambda path: True)
+    monkeypatch.setattr(
+        tb, "_transcribe_with_phonon",
+        lambda path: (_ for _ in ()).throw(AssertionError("should not run")))
+    monkeypatch.setattr(tb, "_transcribe_with_whisper", lambda path: sentinel)
+    assert tb.transcribe_media("video.mp4") is sentinel
+
+
+def test_transcribe_media_falls_back_on_phonon_exception(monkeypatch):
+    def boom(path):
+        raise RuntimeError("phonon exploded")
+
+    sentinel = {"text": "whisper fallback", "language": "en", "segments": []}
+    monkeypatch.setenv("TRANSCRIBE_BACKEND", "phonon")
+    monkeypatch.setattr(tb, "_has_audio_stream", lambda path: True)
+    monkeypatch.setattr(tb, "_transcribe_with_phonon", boom)
     monkeypatch.setattr(tb, "_transcribe_with_whisper", lambda path: sentinel)
     assert tb.transcribe_media("video.mp4") is sentinel
 
